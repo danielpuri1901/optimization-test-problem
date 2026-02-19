@@ -85,13 +85,6 @@ def create_model(data: dict) -> gp.Model:
     # Set high branching priority on bin usage decisions (structural choices)
     for b in range(n_bins):
         y[b].BranchPriority = 10
-    
-    # Set higher priority for high-value items (top 25% get priority 8)
-    value_threshold = np.percentile(values, 75)
-    for i in range(n_items):
-        if values[i] >= value_threshold:
-            for b in range(n_bins):
-                x[i, b].BranchPriority = 8
 
     # Objective: maximize total value of packed items minus bin usage cost
     model.setObjective(
