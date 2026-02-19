@@ -81,6 +81,10 @@ def create_model(data: dict) -> gp.Model:
 
     # y[b] = 1 if bin b is used
     y = model.addVars(n_bins, vtype=GRB.BINARY, name="y")
+    
+    # Set high branching priority on bin usage decisions (structural choices)
+    for b in range(n_bins):
+        y[b].BranchPriority = 10
 
     # Objective: maximize total value of packed items minus bin usage cost
     model.setObjective(
@@ -129,6 +133,8 @@ def create_model(data: dict) -> gp.Model:
 def solve_model(model: gp.Model, time_limit: float = 300.0) -> dict:
     """
     Solve the model and return results.
+    # Gurobi params (auto-tuned by GurobiAgent)
+    model.setParam("Cuts", 2)
     """
     model.setParam("TimeLimit", time_limit)
     model.setParam("OutputFlag", 1)
