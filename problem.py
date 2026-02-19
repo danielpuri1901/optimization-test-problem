@@ -126,6 +126,18 @@ def create_model(data: dict) -> gp.Model:
             name=f"link_bigm_{b}",
         )
 
+    # Valid inequality: Cover cuts for capacity constraints
+    # If items i,j together exceed capacity in any dimension, at most one can be in bin b
+    for b in range(n_bins):
+        for d in range(n_dims):
+            for i in range(n_items):
+                for j in range(i+1, n_items):
+                    if weights[i, d] + weights[j, d] > capacities[d]:
+                        model.addConstr(
+                            x[i, b] + x[j, b] <= 1,
+                            name=f"cover_cut_{i}_{j}_{b}_{d}"
+                        )
+
     model.update()
     return model
 
