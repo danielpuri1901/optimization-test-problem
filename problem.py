@@ -152,6 +152,8 @@ def create_model(data: dict) -> gp.Model:
             gp.quicksum(x[i, b] for i in range(n_items)) <= big_m * y[b],
             name=f"link_bigm_{b}",
         )
+    # Gurobi params (auto-tuned by GurobiAgent)
+    model.setParam("Heuristics", 0.5)
 
     # Constraint 5: Symmetry (no breaking - intentionally left for agent to find)
     # Items should be assigned to lower-indexed bins first
