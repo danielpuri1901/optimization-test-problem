@@ -118,6 +118,22 @@ def create_model(data: dict) -> gp.Model:
                 name=f"capacity_{b}_{d}",
             )
 
+    # Cover inequalities: If items exceed capacity together, limit packing
+    for b in range(n_bins):
+        for d in range(n_dims):
+            # Find sets of items that exceed capacity in dimension d
+            heavy_items = [i for i in range(n_items) if weights[i, d] > capacities[d] * 0.5]
+            if len(heavy_items) >= 3:
+                # Add cover cut: if 3+ heavy items together exceed capacity, at most 2 can be in bin b
+                for i in range(len(heavy_items)):
+                    for j in range(i+1, len(heavy_items)):
+                        for k in range(j+1, len(heavy_items)):
+                            if weights[heavy_items[i], d] + weights[heavy_items[j], d] + weights[heavy_items[k], d] > capacities[d]:
+                                model.addConstr(
+                                    x[heavy_items[i], b] + x[heavy_items[j], b] + x[heavy_items[k], b] <= 2,
+                                    name=f"cover_cut_{b}_{d}_{i}_{j}_{k}"
+                                )
+
     # Constraint 3: Conflict constraints using big-M (intentionally weak)
     # If items i and j conflict, they cannot both be in the same bin
     for i, j in conflicts:
