@@ -172,6 +172,26 @@ def create_model(data: dict) -> gp.Model:
     for b in range(n_bins - 1):
         model.addConstr(y[b] >= y[b + 1], name=f"sym_break_{b}")
 
+    # Item symmetry breaking: for identical items, enforce lexicographic assignment ordering
+    item_props = [(tuple(weights[i]), values[i]) for i in range(n_items)]
+    identical_groups = {}
+    for i, prop in enumerate(item_props):
+        if prop not in identical_groups:
+            identical_groups[prop] = []
+        identical_groups[prop].append(i)
+    
+    for items in identical_groups.values():
+        if len(items) > 1:
+            # For identical items, enforce assignment ordering
+            for idx in range(len(items) - 1):
+                i1, i2 = items[idx], items[idx + 1]
+                for b in range(n_bins):
+                    # If item i2 is assigned to bin b, item i1 must be assigned to bin <= b
+                    model.addConstr(
+                        gp.quicksum(x[i1, bb] for bb in range(b + 1)) >= x[i2, b],
+                        name=f"item_sym_{i1}_{i2}_{b}"
+                    )
+
     model.update()
     return model
 
