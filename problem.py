@@ -85,6 +85,10 @@ def create_model(data: dict) -> gp.Model:
     # Set high branching priority on bin usage decisions (structural choices)
     for b in range(n_bins):
         y[b].BranchPriority = 10
+    
+    # Break bin symmetry: force bins to be used in order
+    for b in range(n_bins - 1):
+        model.addConstr(y[b] >= y[b+1], name=f"sym_break_{b}")
 
     # Objective: maximize total value of packed items minus bin usage cost
     model.setObjective(
