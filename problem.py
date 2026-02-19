@@ -134,6 +134,8 @@ def solve_model(model: gp.Model, time_limit: float = 300.0) -> dict:
     """
     Solve the model and return results.
     # Gurobi params (auto-tuned by GurobiAgent)
+    model.setParam("Heuristics", 0.5)
+    # Gurobi params (auto-tuned by GurobiAgent)
     model.setParam("Cuts", 2)
     """
     model.setParam("TimeLimit", time_limit)
