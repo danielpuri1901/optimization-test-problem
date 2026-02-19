@@ -14,12 +14,13 @@ def main():
     print("Multi-Dimensional Bin Packing Optimizer")
     print("=" * 60)
 
-    # Generate a challenging problem instance
+    # Generate a moderately challenging problem instance
+    # Sized to solve in 30-60 seconds with default parameters
     print("\nGenerating problem instance...")
     data = generate_problem(
-        n_items=200,    # 200 items
-        n_bins=30,      # 30 bins
-        n_dimensions=5, # 5 capacity dimensions
+        n_items=100,    # 100 items (reduced from 200)
+        n_bins=15,      # 15 bins (reduced from 30)
+        n_dimensions=3, # 3 capacity dimensions (reduced from 5)
         seed=42,        # Reproducible
     )
 
