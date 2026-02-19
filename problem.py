@@ -117,6 +117,16 @@ def create_model(data: dict) -> gp.Model:
                 <= capacities[d] * y[b],
                 name=f"capacity_{b}_{d}",
             )
+    
+    # Item-bin incompatibility cuts: prevent assigning items that are too large
+    for i in range(n_items):
+        for b in range(n_bins):
+            for d in range(n_dims):
+                if weights[i, d] > capacities[d]:
+                    model.addConstr(
+                        x[i, b] == 0,
+                        name=f"incompatible_{i}_{b}_{d}"
+                    )
 
     # Cover inequalities: If items exceed capacity together, limit packing
     for b in range(n_bins):
