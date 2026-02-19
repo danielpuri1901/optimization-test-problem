@@ -1,11 +1,5 @@
 """
 Challenging Multi-Dimensional Bin Packing Problem
-
-This problem is designed to be hard enough to trigger the optimization agent:
-- 500+ binary variables
-- Weak LP relaxation (forces branch-and-bound, many nodes)
-- Big-M constraints (triggers rescaling analysis)
-- Takes 30-120 seconds to solve with default parameters
 """
 
 import gurobipy as gp
@@ -39,12 +33,11 @@ def generate_problem(
     # Item values (profit for packing)
     item_values = np.random.randint(50, 200, size=n_items)
 
-    # Bin capacities (slightly constrained to make it challenging)
+    # Bin capacities
     total_weight_per_dim = item_weights.sum(axis=0)
     bin_capacities = (total_weight_per_dim / n_bins * 1.2).astype(int)
 
     # Incompatibility matrix: some items cannot be in the same bin
-    # This weakens the LP relaxation significantly
     n_conflicts = n_items // 3
     conflicts = []
     for _ in range(n_conflicts):
@@ -53,7 +46,6 @@ def generate_problem(
             conflicts.append((int(min(i, j)), int(max(i, j))))
     conflicts = list(set(conflicts))  # Remove duplicates
 
-    # Big-M values (intentionally large, can be tightened)
     big_m = 10000
 
     return {
@@ -71,11 +63,6 @@ def generate_problem(
 def create_model(data: dict) -> gp.Model:
     """
     Create the Gurobi model for the bin packing problem.
-
-    This model has intentionally suboptimal formulation choices:
-    - Uses big-M constraints instead of tighter formulations
-    - No symmetry breaking
-    - Default solver parameters
     """
     n_items = data["n_items"]
     n_bins = data["n_bins"]
@@ -118,28 +105,22 @@ def create_model(data: dict) -> gp.Model:
                 name=f"capacity_{b}_{d}",
             )
 
-    # Constraint 3: Conflict constraints using big-M (intentionally weak)
+    # Constraint 3: Conflict constraints
     # If items i and j conflict, they cannot both be in the same bin
     for i, j in conflicts:
         for b in range(n_bins):
             # Big-M formulation: x[i,b] + x[j,b] <= 1 + M*(1 - some_indicator)
-            # Simplified: just add direct conflict constraint
             model.addConstr(
                 x[i, b] + x[j, b] <= 1,
                 name=f"conflict_{i}_{j}_{b}",
             )
 
-    # Constraint 4: Linking constraint with big-M (intentionally weak formulation)
-    # Use big-M instead of tight indicator constraints
+    # Constraint 4: Linking constraint with big-M
     for b in range(n_bins):
         model.addConstr(
             gp.quicksum(x[i, b] for i in range(n_items)) <= big_m * y[b],
             name=f"link_bigm_{b}",
         )
-
-    # Constraint 5: Symmetry (no breaking - intentionally left for agent to find)
-    # Items should be assigned to lower-indexed bins first
-    # NOT ADDED - this is an improvement opportunity
 
     model.update()
     return model
