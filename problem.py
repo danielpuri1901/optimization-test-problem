@@ -95,6 +95,10 @@ def create_model(data: dict) -> gp.Model:
     # y[b] = 1 if bin b is used
     y = model.addVars(n_bins, vtype=GRB.BINARY, name="y")
 
+    # Set high branching priority for bin opening decisions (structural choices)
+    for b in range(n_bins):
+        y[b].BranchPriority = 10
+
     # Objective: maximize total value of packed items minus bin usage cost
     model.setObjective(
         gp.quicksum(values[i] * x[i, b] for i in range(n_items) for b in range(n_bins))
