@@ -118,6 +118,22 @@ def create_model(data: dict) -> gp.Model:
                 name=f"capacity_{b}_{d}",
             )
 
+    # Cover inequalities: If items exceed capacity together, limit packing
+    for b in range(n_bins):
+        for d in range(n_dims):
+            # Find sets of items that exceed capacity in dimension d
+            heavy_items = [i for i in range(n_items) if weights[i, d] > capacities[d] * 0.5]
+            if len(heavy_items) >= 3:
+                # Add cover cut: if 3+ heavy items together exceed capacity, at most 2 can be in bin b
+                for i in range(len(heavy_items)):
+                    for j in range(i+1, len(heavy_items)):
+                        for k in range(j+1, len(heavy_items)):
+                            if weights[heavy_items[i], d] + weights[heavy_items[j], d] + weights[heavy_items[k], d] > capacities[d]:
+                                model.addConstr(
+                                    x[heavy_items[i], b] + x[heavy_items[j], b] + x[heavy_items[k], b] <= 2,
+                                    name=f"cover_cut_{b}_{d}_{i}_{j}_{k}"
+                                )
+
     # Constraint 3: Conflict constraints using big-M (intentionally weak)
     # If items i and j conflict, they cannot both be in the same bin
     for i, j in conflicts:
@@ -136,10 +152,25 @@ def create_model(data: dict) -> gp.Model:
             gp.quicksum(x[i, b] for i in range(n_items)) <= big_m * y[b],
             name=f"link_bigm_{b}",
         )
+    # Gurobi params (auto-tuned by GurobiAgent)
+    model.setParam("MIPFocus", 1)
 
     # Constraint 5: Symmetry (no breaking - intentionally left for agent to find)
     # Items should be assigned to lower-indexed bins first
     # NOT ADDED - this is an improvement opportunity
+
+    # Valid Inequality 1: Minimum bins required per dimension
+    for d in range(n_dims):
+        total_weight_d = sum(weights[i, d] for i in range(n_items))
+        min_bins_needed = int(np.ceil(total_weight_d / capacities[d]))
+        model.addConstr(
+            gp.quicksum(y[b] for b in range(n_bins)) >= min_bins_needed,
+            name=f"min_bins_dim_{d}"
+        )
+
+    # Symmetry breaking: force bins to be used in order
+    for b in range(n_bins - 1):
+        model.addConstr(y[b] >= y[b + 1], name=f"sym_break_{b}")
 
     model.update()
     return model
