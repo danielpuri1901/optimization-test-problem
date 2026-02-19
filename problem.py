@@ -150,6 +150,10 @@ def create_model(data: dict) -> gp.Model:
             name=f"min_bins_dim_{d}"
         )
 
+    # Symmetry breaking: force bins to be used in order
+    for b in range(n_bins - 1):
+        model.addConstr(y[b] >= y[b + 1], name=f"sym_break_{b}")
+
     model.update()
     return model
 
