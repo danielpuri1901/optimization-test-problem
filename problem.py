@@ -170,14 +170,6 @@ def create_model(data: dict) -> gp.Model:
     for b in range(n_bins - 1):
         model.addConstr(y[b] >= y[b + 1], name=f"sym_break_{b}")
 
-    # Additional symmetry breaking: lower-indexed bins should have >= items than higher-indexed bins
-    for b in range(n_bins - 1):
-        model.addConstr(
-            gp.quicksum(x[i, b] for i in range(n_items)) >= 
-            gp.quicksum(x[i, b+1] for i in range(n_items)),
-            name=f"sym_break_count_{b}"
-        )
-
     model.update()
     return model
 
