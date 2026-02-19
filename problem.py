@@ -122,7 +122,7 @@ def create_model(data: dict) -> gp.Model:
     # Constraint 4: Linking constraint with big-M
     for b in range(n_bins):
         model.addConstr(
-            gp.quicksum(x[i, b] for i in range(n_items)) <= big_m * y[b],
+            gp.quicksum(x[i, b] for i in range(n_items)) <= n_items * y[b],
             name=f"link_bigm_{b}",
         )
 
