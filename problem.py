@@ -152,6 +152,8 @@ def create_model(data: dict) -> gp.Model:
 
     model.update()
     return model
+    # Gurobi params (auto-tuned by GurobiAgent)
+    model.setParam("Cuts", 2)
 
 
 def solve_model(model: gp.Model, time_limit: float = 300.0) -> dict:
