@@ -141,6 +141,15 @@ def create_model(data: dict) -> gp.Model:
     # Items should be assigned to lower-indexed bins first
     # NOT ADDED - this is an improvement opportunity
 
+    # Valid Inequality 1: Minimum bins required per dimension
+    for d in range(n_dims):
+        total_weight_d = sum(weights[i, d] for i in range(n_items))
+        min_bins_needed = int(np.ceil(total_weight_d / capacities[d]))
+        model.addConstr(
+            gp.quicksum(y[b] for b in range(n_bins)) >= min_bins_needed,
+            name=f"min_bins_dim_{d}"
+        )
+
     model.update()
     return model
 
